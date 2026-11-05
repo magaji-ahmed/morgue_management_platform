@@ -2,7 +2,7 @@ import math
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from sqlalchemy import select, or_
 from ..audit import log
-from ..config import DAILY_RATE
+from .settings import get_rate
 from ..db import get_db
 from ..models import AuditLog, Body, BodyService, Payment, Service, now
 from ..ocr import extract_fields
@@ -42,12 +42,12 @@ def receipt(b):
     days = max(
         1, math.ceil((end - b.admitted_at).total_seconds() / 86400)
     )  # part of a day counts as a full day
-    storage = days * DAILY_RATE
+    storage = days * b.daily_rate
     services = sum(s.price for s in b.services)
     paid = sum(p.amount for p in b.payments)
     return {
         "days": days,
-        "daily_rate": DAILY_RATE,
+        "daily_rate": b.daily_rate,
         "storage": storage,
         "services": services,
         "total": storage + services,
@@ -126,7 +126,11 @@ async def scan(file: UploadFile, u=Depends(staff), db=Depends(get_db)):
 
 @r.post("")
 def register(d: BodyCreate, u=Depends(staff), db=Depends(get_db)):
-    b = Body(**d.model_dump(exclude={"service_ids"}), registered_by=u.id)
+    b = Body(
+        **d.model_dump(exclude={"service_ids"}),
+        registered_by=u.id,
+        daily_rate=get_rate(db, d.origin),
+    )
     db.add(b)
     db.flush()
     b.tag_no = f"MB-{b.admitted_at.year}-{b.id:05d}"
@@ -147,11 +151,17 @@ def detail(bid: int, db=Depends(get_db)):
 @r.patch("/{bid}")
 def edit(bid: int, d: BodyIn, u=Depends(staff), db=Depends(get_db)):
     b = get_body(db, bid)
+    old_origin = b.origin
+    if b.status == "released" and d.origin != old_origin:
+        raise HTTPException(400, "Origin can't be changed after release.")
     changes = []
     for k, v in d.model_dump().items():
         if getattr(b, k) != v:
             changes.append(f"{k}: {getattr(b, k)!r} -> {v!r}")
             setattr(b, k, v)
+    if b.origin != old_origin:
+        b.daily_rate = get_rate(db, b.origin)
+        changes.append(f"daily_rate -> {b.daily_rate:.2f}")
     if changes:
         log(db, u, "edited details", b.id, "; ".join(changes))
     db.commit()

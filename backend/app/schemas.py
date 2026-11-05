@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 from pydantic import BaseModel, Field
 
 
@@ -36,6 +36,8 @@ class BodyIn(BaseModel):
     contact_name: Optional[str] = None
     contact_phone: Optional[str] = None
     contact_relation: Optional[str] = None
+    contact_address: Optional[str] = None
+    origin: Literal["internal", "external"]
 
 
 class ServiceIn(BaseModel):
@@ -71,3 +73,8 @@ def user_out(u):
         "must_change_password": u.must_change_password,
         "created_at": u.created_at,
     }
+
+
+class RatesIn(BaseModel):
+    internal: float = Field(ge=0)
+    external: float = Field(ge=0)

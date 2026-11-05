@@ -33,6 +33,14 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
 
 
+class Setting(Base):
+    __tablename__ = "settings"
+    key: Mapped[str] = mapped_column(
+        String(40), primary_key=True
+    )  # "rate_internal", "rate_external"
+    value: Mapped[float] = mapped_column(Float)
+
+
 class Service(Base):
     __tablename__ = "services"
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -55,6 +63,7 @@ class Body(Base):
     notes: Mapped[Optional[str]] = mapped_column(Text)
     contact_name: Mapped[Optional[str]] = mapped_column(String(160))
     contact_phone: Mapped[Optional[str]] = mapped_column(String(40))
+    contact_address: Mapped[Optional[str]] = mapped_column(Text)
     contact_relation: Mapped[Optional[str]] = mapped_column(String(60))
     status: Mapped[str] = mapped_column(
         String(10), default="stored"
@@ -64,6 +73,12 @@ class Body(Base):
     registered_by: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"))
     services: Mapped[list["BodyService"]] = relationship(order_by="BodyService.id")
     payments: Mapped[list["Payment"]] = relationship(order_by="Payment.id")
+    origin: Mapped[str] = mapped_column(
+        String(10), default="external", server_default="external"
+    )  # internal | external
+    daily_rate: Mapped[float] = mapped_column(
+        Float, default=0, server_default="0"
+    )  # frozen at registration
 
 
 class BodyService(Base):
