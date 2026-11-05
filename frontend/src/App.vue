@@ -21,7 +21,7 @@ function signOut() { setAuth(null, null); router.push("/login"); }
         <button @click="signOut">Sign out</button>
       </div>
     </aside>
-    <main class="content">
+    <main class="content" :class="{ 'content-bare': !auth.token }">
       <RouterView />
     </main>
   </div>
@@ -62,5 +62,9 @@ nav a.router-link-exact-active {
 
 .content {
   @apply flex-1 p-5 md:p-10 max-w-5xl;
+}
+
+.content-bare {
+  @apply max-w-none;
 }
 </style>
