@@ -1,8 +1,9 @@
 <script setup>
 import { reactive, watch } from "vue";
-const props = defineProps({ initial: { type: Object, default: () => ({}) }, busy: Boolean, label: { type: String, default: "Save record" } });
+import { money } from "../api";
+const props = defineProps({ initial: { type: Object, default: () => ({}) }, busy: Boolean, label: { type: String, default: "Save record" }, rates: { type: Object, default: () => ({}) } });
 const emit = defineEmits(["save"]);
-const keys = ["full_name", "gender", "age", "date_of_death", "cause_of_death", "notes", "contact_name", "contact_phone", "contact_relation"];
+const keys = ["full_name", "gender", "age", "date_of_death", "cause_of_death", "notes", "contact_name", "contact_phone", "contact_relation", "contact_address", "origin"];
 const form = reactive(Object.fromEntries(keys.map((k) => [k, ""])));
 
 watch(() => props.initial, (v) => keys.forEach((k) => (form[k] = v?.[k] ?? "")), { immediate: true, deep: true });
@@ -24,6 +25,15 @@ function submit() {
       <label class="label span2">Full name <span class="hint">Leave blank if unidentified</span>
         <input class="field" v-model="form.full_name" />
       </label>
+      <label class="label span2">Origin
+        <select class="field" v-model="form.origin" required>
+          <option value="" disabled>Choose one</option>
+          <option value="internal">Internal, from the hospital{{ rates.internal != null ? ` (${money(rates.internal)}
+            per day)` : "" }}</option>
+          <option value="external">External, from outside{{ rates.external != null ? ` (${money(rates.external)} per
+            day)` : "" }}</option>
+        </select>
+      </label>
       <label class="label">Gender
         <select class="field" v-model="form.gender">
           <option value="">Not recorded</option>
@@ -42,6 +52,8 @@ function submit() {
       <label class="label">Name <input class="field" v-model="form.contact_name" /></label>
       <label class="label">Phone <input class="field" v-model="form.contact_phone" /></label>
       <label class="label span2">Relationship <input class="field" v-model="form.contact_relation" /></label>
+      <label class="label span2">Address <textarea class="field" rows="2"
+          v-model="form.contact_address"></textarea></label>
     </fieldset>
     <slot />
     <button class="btn btn-primary" :disabled="busy">{{ label }}</button>

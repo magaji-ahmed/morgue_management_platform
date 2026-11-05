@@ -16,14 +16,27 @@ onMounted(load);
     </header>
     <input class="field search" v-model="q" placeholder="Search by name, tag number or contact" aria-label="Search" />
     <table v-if="rows.length" class="grid-table">
-      <thead><tr><th>Tag</th><th>Name</th><th>Admitted</th><th>Contact</th><th>Status</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Tag</th>
+          <th>Name</th>
+          <th>Admitted</th>
+          <th>Contact</th>
+          <th>Status</th>
+          <th>Origin</th>
+        </tr>
+      </thead>
       <tbody>
         <tr v-for="b in rows" :key="b.id">
-          <td><RouterLink :to="`/bodies/${b.id}`" class="link">{{ b.tag_no }}</RouterLink></td>
+          <td>
+            <RouterLink :to="`/bodies/${b.id}`" class="link">{{ b.tag_no }}</RouterLink>
+          </td>
           <td>{{ b.full_name || "Unidentified" }}</td>
           <td>{{ fmt(b.admitted_at) }}</td>
-          <td><span v-if="b.contact_missing" class="badge badge-warn">Needed</span><span v-else>{{ b.contact_name }}</span></td>
+          <td><span v-if="b.contact_missing" class="badge badge-warn">Needed</span><span v-else>{{ b.contact_name
+              }}</span></td>
           <td><span class="badge">{{ b.status }}</span></td>
+          <td><span class="badge">{{ b.origin }}</span></td>
         </tr>
       </tbody>
     </table>
@@ -32,10 +45,27 @@ onMounted(load);
 </template>
 
 <style scoped>
-.page { @apply space-y-5; }
-header { @apply flex items-center justify-between gap-4; }
-h1 { @apply text-3xl; }
-.search { @apply max-w-md; }
-.link { @apply underline underline-offset-2; }
-.empty { @apply text-moss; }
+.page {
+  @apply space-y-5;
+}
+
+header {
+  @apply flex items-center justify-between gap-4;
+}
+
+h1 {
+  @apply text-3xl;
+}
+
+.search {
+  @apply max-w-md;
+}
+
+.link {
+  @apply underline underline-offset-2;
+}
+
+.empty {
+  @apply text-moss;
+}
 </style>

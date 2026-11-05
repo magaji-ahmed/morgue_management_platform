@@ -5,7 +5,11 @@ import { api, money } from "../api";
 import BodyForm from "../components/BodyForm.vue";
 const router = useRouter(), formRef = ref(), busy = ref(false), error = ref(""), scanned = ref(false);
 const services = ref([]), chosen = ref([]);
-onMounted(async () => (services.value = (await api("/services")).filter((s) => s.active)));
+const rates = ref({});
+onMounted(async () => {
+  services.value = (await api("/services")).filter((s) => s.active);
+  rates.value = await api("/settings/rates");
+});
 
 async function scan(e) {
   const file = e.target.files[0]; if (!file) return;
@@ -32,13 +36,13 @@ async function save(data) {
       <p v-if="scanned" class="check">Scanner results are a draft. Check every field before saving.</p>
     </div>
     <p v-if="error" class="error" role="alert">{{ error }}</p>
-    <BodyForm ref="formRef" :busy="busy" label="Save body record" @save="save">
+    <BodyForm ref="formRef" :busy="busy" :rates="rates" label="Save body record" @save="save">
       <div class="card">
         <h2>Services requested</h2>
         <p class="hint">Tick what the family wants. Staff mark each one done later.</p>
         <label v-for="s in services" :key="s.id" class="check-row">
-          <input type="checkbox" :value="s.id" v-model="chosen" /> {{ s.name }} <span class="meta">{{ money(s.price)
-            }}</span>
+          <input type="checkbox" :value="s.id" v-model="chosen" /> {{ s.name }} <span class="meta">{{
+            money(s.price)}}</span>
         </label>
       </div>
     </BodyForm>

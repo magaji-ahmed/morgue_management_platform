@@ -5,12 +5,15 @@ const items = ref([]), error = ref(""), ok = ref("");
 const blank = () => ({ name: "", price: "" });
 const form = ref(blank());
 const load = async () => (items.value = await api("/services"));
+const rates = ref({ internal: "", external: "" });
+const loadRates = async () => (rates.value = await api("/settings/rates"));
+const saveRates = () => run(() => api("/settings/rates", { method: "PUT", body: { internal: Number(rates.value.internal), external: Number(rates.value.external) } }));
 async function run(fn) { error.value = ok.value = ""; try { await fn(); await load(); ok.value = "Saved."; } catch (e) { error.value = e.message; } }
 const add = () => run(async () => { await api("/services", { method: "POST", body: { name: form.value.name, price: Number(form.value.price), active: true } }); form.value = blank(); });
 const save = (s) => run(() => api(`/services/${s.id}`, { method: "PATCH", body: { name: s.name, price: Number(s.price), active: s.active } }));
 const restore = (s) => { s.active = true; save(s); };
 const remove = (s) => confirm(`Remove ${s.name}? Past records keep it on their receipts.`) && run(() => api(`/services/${s.id}`, { method: "DELETE" }));
-onMounted(load);
+onMounted(() => { load(); loadRates(); });
 </script>
 
 <template>
@@ -18,6 +21,15 @@ onMounted(load);
         <h1>Services and prices</h1>
         <p v-if="error" class="error" role="alert">{{ error }}</p>
         <p v-if="ok" class="ok">{{ ok }}</p>
+        <form class="card grid gap-4 sm:grid-cols-3 items-end" @submit.prevent="saveRates">
+            <label class="label">Internal daily rate (from the hospital) <input class="field" type="number" step="0.01"
+                    min="0" v-model="rates.internal" required /></label>
+            <label class="label">External daily rate (from outside) <input class="field" type="number" step="0.01"
+                    min="0" v-model="rates.external" required /></label>
+            <button class="btn btn-primary">Save rates</button>
+            <p class="hint sm:col-span-3">New registrations use these rates. Bodies already registered keep the rate
+                they were registered at.</p>
+        </form>
         <form class="card form-grid" @submit.prevent="add">
             <label class="label">Service name <input class="field" v-model="form.name" required /></label>
             <label class="label">Price <input class="field" type="number" step="0.01" min="0" v-model="form.price"

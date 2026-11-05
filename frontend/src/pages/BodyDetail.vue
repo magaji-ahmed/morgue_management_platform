@@ -8,6 +8,7 @@ const id = useRoute().params.id;
 const b = ref(null), services = ref([]), logs = ref([]);
 const pick = ref(""), amount = ref(""), note = ref(""), error = ref(""), saved = ref(false);
 const print = () => window.print();
+const rates = ref({})
 
 async function refreshLogs() { logs.value = await api(`/bodies/${id}/audit`); }
 async function run(fn) {
@@ -31,6 +32,7 @@ const release = () => confirm("Release this body? This cannot be undone.") && ru
 
 onMounted(async () => {
   services.value = (await api("/services")).filter((s) => s.active);
+  rates.value = await api("/settings/rates");
   b.value = await api(`/bodies/${id}`);
   await refreshLogs();
 });
@@ -46,7 +48,7 @@ onMounted(async () => {
     <p v-if="saved" class="ok no-print">Saved.</p>
 
     <div class="no-print">
-      <BodyForm :initial="b" label="Save changes" @save="save" />
+      <BodyForm :initial="b" :rates="rates" label="Save changes" @save="save" />
     </div>
 
     <div class="card no-print">
